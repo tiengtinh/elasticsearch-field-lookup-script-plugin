@@ -22,3 +22,4 @@ target/
 ## netbeans ignores
 nb-configuration.xml
 nbactions.xml
+/bin/

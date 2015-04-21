@@ -1,4 +1,4 @@
-package org.elasticsearch.examples.nativescript.script;
+package org.elasticsearch.field.lookup.script;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -37,7 +37,7 @@ public class PhraseScoreScript extends AbstractSearchScript {
 
     /**
      * Factory that is registered in
-     * {@link org.elasticsearch.examples.nativescript.plugin.NativeScriptExamplesPlugin#onModule(org.elasticsearch.script.ScriptModule)}
+     * {@link org.elasticsearch.field.lookup.plugin.FieldLookupScriptPlugin#onModule(org.elasticsearch.script.ScriptModule)}
      * method when the plugin is loaded.
      */
     public static class Factory implements NativeScriptFactory {

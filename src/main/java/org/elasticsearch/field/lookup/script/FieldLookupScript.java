@@ -1,4 +1,4 @@
-package org.elasticsearch.examples.nativescript.script;
+package org.elasticsearch.field.lookup.script;
 
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
@@ -28,11 +28,11 @@ import java.util.concurrent.TimeUnit;
 
 /**
  */
-public class LookupScript extends AbstractSearchScript {
+public class FieldLookupScript extends AbstractSearchScript {
 
     /**
      * Native scripts are build using factories that are registered in the
-     * {@link org.elasticsearch.examples.nativescript.plugin.NativeScriptExamplesPlugin#onModule(org.elasticsearch.script.ScriptModule)}
+     * {@link org.elasticsearch.field.lookup.plugin.FieldLookupScriptPlugin#onModule(org.elasticsearch.script.ScriptModule)}
      * method when plugin is loaded.
      */
     public static class Factory extends AbstractComponent implements NativeScriptFactory{
@@ -90,7 +90,7 @@ public class LookupScript extends AbstractSearchScript {
             if (field == null) {
                 throw new ScriptException("Missing the field parameter");
             }
-            return new LookupScript(node.client(), logger, cache, lookupIndex, lookupType, field);
+            return new FieldLookupScript(node.client(), logger, cache, lookupIndex, lookupType, field);
         }
     }
 
@@ -104,7 +104,7 @@ public class LookupScript extends AbstractSearchScript {
 
     private static final Map<String, Object> EMPTY_MAP = ImmutableMap.of();
 
-    private LookupScript(Client client, ESLogger logger, Cache<Tuple<String, String>, Map<String, Object>> cache, String lookupIndex, String lookupType, String field) {
+    private FieldLookupScript(Client client, ESLogger logger, Cache<Tuple<String, String>, Map<String, Object>> cache, String lookupIndex, String lookupType, String field) {
         this.client = client;
         this.logger = logger;
         this.lookupIndex = lookupIndex;

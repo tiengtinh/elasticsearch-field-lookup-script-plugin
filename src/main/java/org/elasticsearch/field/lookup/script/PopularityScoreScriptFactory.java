@@ -1,4 +1,4 @@
-package org.elasticsearch.examples.nativescript.script;
+package org.elasticsearch.field.lookup.script;
 
 import org.apache.lucene.search.Scorer;
 import org.elasticsearch.common.Nullable;

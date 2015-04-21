@@ -1,30 +1,31 @@
-package org.elasticsearch.examples.nativescript.script;
+package org.elasticsearch.field.lookup.script;
 
-import static org.elasticsearch.index.query.FilterBuilders.scriptFilter;
-import static org.elasticsearch.index.query.QueryBuilders.filteredQuery;
-import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
+import static org.elasticsearch.index.query.QueryBuilders.functionScoreQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.collect.MapBuilder;
+import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.junit.Test;
 
 /**
  */
-public class IsPrimeSearchScriptTests extends AbstractSearchScriptTests {
-
-    public static int[] PRIMES_10 = new int[] { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 };
+public class PopularityScoreScriptTests extends AbstractSearchScriptTests {
 
     @Test
-    public void testIsPrimeScript() throws Exception {
+    public void testPopularityScoring() throws Exception {
       
         // Create a new index
         String mapping = XContentFactory.jsonBuilder().startObject().startObject("type")
@@ -38,57 +39,53 @@ public class IsPrimeSearchScriptTests extends AbstractSearchScriptTests {
                 .addMapping("type", mapping));
 
         List<IndexRequestBuilder> indexBuilders = new ArrayList<IndexRequestBuilder>();
-        // Index 100 records (0..99)
-        for (int i = 0; i < 100; i++) {
+        
+        // Index 5 records with non-empty number field
+        for (int i = 0; i < 5; i++) {
             indexBuilders.add(
                     client().prepareIndex("test", "type", Integer.toString(i))
                     .setSource(XContentFactory.jsonBuilder().startObject()
                             .field("name", "rec " + i)
-                            .field("number", i)
+                            .field("number", i + 1)
                             .endObject()));
         }
         // Index a few records with empty number
-        for (int i = 100; i < 105; i++) {
+        for (int i = 5; i < 10; i++) {
             indexBuilders.add(
                     client().prepareIndex("test", "type", Integer.toString(i))
                     .setSource(XContentFactory.jsonBuilder().startObject()
                             .field("name", "rec " + i)
                             .endObject()));
         }
-
+        
         indexRandom(true, indexBuilders);
         
-        // Retrieve first 10 prime records
+        Map<String, Object> params = MapBuilder.<String, Object> newMapBuilder().put("field", "number").map();
+        // Retrieve first 10 hits
         SearchResponse searchResponse = client().prepareSearch("test")
-                .setQuery(filteredQuery(matchAllQuery(), 
-                        scriptFilter("is_prime").lang("native").addParam("field", "number")))
-                .addField("name")
+                .setQuery(functionScoreQuery(matchQuery("name", "rec"))
+                        .boostMode(CombineFunction.REPLACE)
+                        .add(ScoreFunctionBuilders.scriptFunction("popularity", "native", params)))
                 .setSize(10)
-                .addSort("number", SortOrder.ASC)
+                .addField("name")
                 .execute().actionGet();
         
         assertNoFailures(searchResponse);
 
-        // There should be 25 prime numbers between 0 and 100
-        assertHitCount(searchResponse, 25);
+        // There should be 10 hist
+        assertHitCount(searchResponse, 10);
 
-        // Verify that they are indeed prime numbers
-        for (int i = 0; i < 10; i++) {
-            assertThat(searchResponse.getHits().getAt(i).field("name").getValue().toString(), equalTo("rec " + PRIMES_10[i]));
+        // Verify that first 5 hits are sorted from 4 to 0
+        for (int i = 0; i < 5; i++) {
+            assertThat(searchResponse.getHits().getAt(i).field("name").getValue().toString(), equalTo("rec " + (4 - i)));
         }
 
-        // Check certainty parameter - with certainty == 0, it should return all numbers, but only if numbers are present
-        searchResponse = client().prepareSearch("test")
-                .setQuery(filteredQuery(matchAllQuery(),
-                        scriptFilter("is_prime").lang("native").addParam("field", "number").addParam("certainty", 0)))
-                .addField("name")
-                .setSize(10)
-                .addSort("number", SortOrder.ASC)
-                .execute().actionGet();
-        assertNoFailures(searchResponse);
-        // With certainty 0 no check is done so it should return all numbers
-        assertHitCount(searchResponse, 100);
+        // Verify that hit 5 has non-zero score
+        assertThat(searchResponse.getHits().getAt(5).score(), greaterThan(0.0f));
 
+        // Verify that the last 5 hits has the same score
+        for (int i = 6; i < 10; i++) {
+            assertThat(searchResponse.getHits().getAt(i).score(), equalTo(searchResponse.getHits().getAt(5).score()));
+        }
     }
-
 }

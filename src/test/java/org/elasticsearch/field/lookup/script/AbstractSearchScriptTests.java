@@ -1,4 +1,4 @@
-package org.elasticsearch.examples.nativescript.script;
+package org.elasticsearch.field.lookup.script;
 
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;

@@ -1,4 +1,4 @@
-package org.elasticsearch.examples.nativescript.script;
+package org.elasticsearch.field.lookup.script;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -22,7 +22,7 @@ public class IsPrimeSearchScript extends AbstractSearchScript {
 
     /**
      * Native scripts are build using factories that are registered in the
-     * {@link org.elasticsearch.examples.nativescript.plugin.NativeScriptExamplesPlugin#onModule(org.elasticsearch.script.ScriptModule)}
+     * {@link org.elasticsearch.field.lookup.plugin.FieldLookupScriptPlugin#onModule(org.elasticsearch.script.ScriptModule)}
      * method when plugin is loaded.
      */
     public static class Factory implements NativeScriptFactory {
